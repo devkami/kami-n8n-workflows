@@ -1,0 +1,644 @@
+{
+  "name": "analise-do-cliente-sharpspring-movidesk",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const apis_credentials = {\n  \"sharpspring\": {\n    \"url\": \"http://api.sharpspring.com/pubapi/v1\",\n    \"account_id\":\"my_sharspring_account_id\",\n    \"secret_key\":\"my_sharspring_secret_id\",\n  },\n  \"movidesk\": {\n    \"url\":\"https://https://api.movidesk.com/public/v1\",\n    \"token\": \"my_movidesk_token\",\n  },\n}\n\nenv_vars = {\n  \"apis_credentials\": apis_credentials\n}\nreturn [{ json: env_vars }]\n"
+      },
+      "id": "914af4d7-66dc-45b3-aef6-6953b341cb8c",
+      "name": "env-vars",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.movidesk.com/public/v1/tickets?token={{ $('env-vars').first().json.apis_credentials.movidesk.token }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json[\"body\"][\"ticketData\"] }}",
+        "options": {}
+      },
+      "id": "4b765cd8-345f-464c-af2c-e82a0cf323d8",
+      "name": "movidesk-post-ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('env-vars').first().json.apis_credentials.sharpspring.url }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "accountID",
+              "value": "={{ $('env-vars').first().json.apis_credentials.sharpspring.account_id }}"
+            },
+            {
+              "name": "=secretKey",
+              "value": "={{ $('env-vars').first().json.apis_credentials.sharpspring.secret_key }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Expect"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"method\":\"getDealStages\",\n  \"params\":{\n    \"where\":{},\n    \"limit\":500,\n    \"offset\":0\n  },\n  \"id\":\"{{ $now.format(\"yyyy-MM-dd-mm-ss-uxq\") }}\"\n}",
+        "options": {}
+      },
+      "id": "dd37658e-6bdf-4235-a236-07cc7c5588a0",
+      "name": "sharpspring-get-deal-stages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "dealStages = items[0].json.result.dealStage;\nreturn [{ 'dealStages':dealStages }]"
+      },
+      "id": "692ed8c1-ced7-416e-98b9-fda84b8c4d62",
+      "name": "deal-stages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "230a6f31-5396-4726-af2d-cf1263af338e",
+        "options": {}
+      },
+      "id": "4298469a-b1f1-4b3c-828b-cc55c1212cb2",
+      "name": "sharpspring-lead-webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -180,
+        560
+      ],
+      "webhookId": "230a6f31-5396-4726-af2d-cf1263af338e"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('env-vars').first().json.apis_credentials.sharpspring.url }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "accountID",
+              "value": "={{ $('env-vars').first().json.apis_credentials.sharpspring.account_id }}"
+            },
+            {
+              "name": "=secretKey",
+              "value": "={{ $('env-vars').first().json.apis_credentials.sharpspring.secret_key }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Expect"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "4eedd1f0-c3c6-4623-8b95-8f3323e2465f",
+      "name": "sharpspring-get-opportunity-leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        900,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('env-vars').first().json.apis_credentials.sharpspring.url }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "accountID",
+              "value": "={{ $('env-vars').first().json.apis_credentials.sharpspring.account_id }}"
+            },
+            {
+              "name": "=secretKey",
+              "value": "={{ $('env-vars').first().json.apis_credentials.sharpspring.secret_key }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Expect"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "3a28c97a-ab7d-4c94-bc1c-22217f863f4c",
+      "name": "sharpspring-get-opportunity",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1480,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function formatDate(date) {\n  const yyyy = date.getFullYear();\n  const MM = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based\n  const dd = String(date.getDate()).padStart(2, '0');\n  const HH = String(date.getHours()).padStart(2, '0');\n  const mm = String(date.getMinutes()).padStart(2, '0');\n  const ss = String(date.getSeconds()).padStart(2, '0');\n  const uxq = String(date.getMilliseconds()).padStart(3, '0');\n  return `${yyyy}-${MM}-${dd}-${HH}-${mm}-${ss}-${uxq}`;\n}\nnow = new Date();\nconst requestID = formatDate(now);\nconst leadID = $('movidesk-ticket-webhook').first().json.body.CustomFieldValues.filter(\n  field => field.CustomFieldId === 185029 &&\n    field.CustomFieldRuleId === 94496\n)[0].Value\n\nreturn {\n  body: {\n    method: \"getOpportunityLeads\",\n    params:{\n      where:{leadID:parseInt(leadID)},\n      limit: 500,\n      offset:0\n    },\n    id: requestID\n  }\n}"
+      },
+      "id": "416ef958-fe37-4b8d-b2d4-d47bd7ac9dbd",
+      "name": "build-getOpportunityLeads-body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "function formatDate(date) {\n  const yyyy = date.getFullYear();\n  const MM = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based\n  const dd = String(date.getDate()).padStart(2, '0');\n  const HH = String(date.getHours()).padStart(2, '0');\n  const mm = String(date.getMinutes()).padStart(2, '0');\n  const ss = String(date.getSeconds()).padStart(2, '0');\n  const uxq = String(date.getMilliseconds()).padStart(3, '0');\n  return `${yyyy}-${MM}-${dd}-${HH}-${mm}-${ss}-${uxq}`;\n}\nnow = new Date();\nconst requestID = formatDate(now);\nconst opportunityID = $json.result.getWhereopportunityLeads[0].opportunityID\n\n\nreturn {\n  body: {\n    method: \"getOpportunity\",\n    params: {id: parseInt(opportunityID)},\n    id: requestID\n  }\n}"
+      },
+      "id": "548386e8-63b5-4a86-a882-4ad006005e49",
+      "name": "build-getOpportunity-body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "=//build requestID\nfunction formatDate(date) {\n  const yyyy = date.getFullYear();\n  const MM = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based\n  const dd = String(date.getDate()).padStart(2, '0');\n  const HH = String(date.getHours()).padStart(2, '0');\n  const mm = String(date.getMinutes()).padStart(2, '0');\n  const ss = String(date.getSeconds()).padStart(2, '0');\n  const uxq = String(date.getMilliseconds()).padStart(3, '0');\n  return `${yyyy}-${MM}-${dd}-${HH}-${mm}-${ss}-${uxq}`;\n}\nnow = new Date();\nconst requestID = formatDate(now);\n\nconst dealStages = $('deal-stages').first().json.dealStages;\nconst opportunity = $('sharpspring-get-opportunity').first().json.result.opportunity[0]\n\nconst analiseDoClienteStage = dealStages.find(stage => stage.dealStageName === \"Análise do cliente\")\nconst analiseDoClienteStageID = analiseDoClienteStage ? analiseDoClienteStage.id: null;\n\nconst analiseFinanceiraStage = dealStages.find(stage => stage.dealStageName === \"Análise Financeira\")\nconst analiseFinanceiraStageID = analiseFinanceiraStage ? analiseFinanceiraStage.id: null;\n\nif (opportunity.dealStageID === analiseDoClienteStageID){\n  opportunity.dealStageID = analiseFinanceiraStageID;\n}\n\nreturn {\n  body: {\n    method: \"updateOpportunities\",\n    params: { objects: [opportunity] },\n    id: requestID\n  }\n};"
+      },
+      "id": "622668ec-fe5f-40ee-81db-14298e7e26f0",
+      "name": "build-updateOpportunities-body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('env-vars').first().json.apis_credentials.sharpspring.url }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "accountID",
+              "value": "={{ $('env-vars').first().json.apis_credentials.sharpspring.account_id }}"
+            },
+            {
+              "name": "=secretKey",
+              "value": "={{ $('env-vars').first().json.apis_credentials.sharpspring.secret_key }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Expect"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "b46d4e63-bd0f-4ec2-a216-46647497cf31",
+      "name": "sharpspring-update-opportunities",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2060,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const webhookData = $('sharpspring-lead-webhook').first();\nconst movidesk_api_token = $('env-vars').first().json.apis_credentials.movidesk.token;\n\nconst clientName = webhookData.displayName || \"Desconhecido\";\nconst subject = `Análise do Cliente: ${clientName}`;\nconst description = `\n  <h3>Dados para Análise</h3>\n  <p><strong>Nome:</strong> ${webhookData.firstName || ''} ${webhookData.lastName || ''}</p>\n  <p><strong>CPF:</strong> ${webhookData.cpf || ''}</p>\n  <p><strong>Razão Social:</strong> ${webhookData.raz__o_social_ou_nome_fantasia_660d5be99096c || ''}</p>\n  <p><strong>Nome fantasia:</strong> ${webhookData.nomeFantasia || ''}</p>\n  <p><strong>CNPJ:</strong> ${webhookData.cnpj_6511cc1ce6b48 || ''}</p>\n  <p><strong>Endereço:</strong> ${webhookData.endere__o_65b24fc6d0166 || ''}</p>\n  <p><strong>Telefone:</strong> ${webhookData.phoneNumber || ''}</p>\n  <p><strong>E-mail:</strong> ${webhookData.emailAddress || ''}</p>\n  <p><strong>Nome do Vendedor:</strong> ${webhookData.vendedor_6509e3fc7d400 || ''}</p>\n  <p><strong>Cod. UNO:</strong> ${webhookData.c__digo_uno_6633e75600296 || ''}</p>  \n  <h3>Imagens:</h3>\n  <ul>\n    <li>RG: ${webhookData.rg__frente_e_verso___1__660e9b90e989b || ''}</li>\n    <li>CPF: ${webhookData.cpf || ''}</li>\n    <li>Comprovante de Endereço: ${webhookData.comprovante_de_resid__ncia_660d5cee1ae0f || ''}</li>\n    <li>CNPJ: ${webhookData.cnpj_6511cc1ce6b48 || ''}</li>\n    <li>Foto da Faixada: ${webhookData.foto_do_local_de_entrega_660d5cb85f038 || ''}</li>\n  </ul>\n`;\n\nconst ticketData = {\n    \"type\": 1,\n    \"subject\": subject,\n    \"origin\": 9,    \n    \"clients\": [\n        {\n            \"id\": \"1274270668\",\n            \"personType\": 1,\n            \"profileType\": 1,\n            \"Customers\": \"\",\n        }\n    ],\n    \"actions\": [\n        {\n            \"type\": 1,\n            \"origin\": \"9\",\n            \"description\": description,\n            \"Notes\":\"\",\n        }\n    ],\n  \"customFieldValues\":[\n    {\n      \"customFieldId\": \"185029\",\n      \"customFieldRuleId\": \"94496\",\n      \"line\": 1,\n      \"value\": webhookData.leadID || ''\n    },\n  ],\n  \"createdBy\":{ \"id\": \"1018440105\"},\n};\n\nreturn {body: {ticketData: ticketData}};\n"
+      },
+      "id": "706d6357-d882-4ba8-87fe-e7b50024cf63",
+      "name": "build-post-ticket-body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "230a6f31-5396-4726-af2d-cf1263af338e",
+        "options": {}
+      },
+      "id": "1a1fcb61-8a1e-49b8-9c03-cb54a2ab93f7",
+      "name": "movidesk-ticket-webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        340,
+        -20
+      ],
+      "webhookId": "230a6f31-5396-4726-af2d-cf1263af338e"
+    }
+  ],
+  "pinData": {
+    "sharpspring-lead-webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.kamico.com.br",
+            "user-agent": "python-requests/2.31.0",
+            "content-length": "12088",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate",
+            "content-type": "multipart/form-data; boundary=e5d5ce5dd5288dbcd881280b2b28bf815f9d37b2ddb9a1fec4d031589567",
+            "x-forwarded-for": "191.193.55.226",
+            "x-forwarded-host": "n8n.kamico.com.br",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "73684829735e",
+            "x-real-ip": "191.193.55.226"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "perfil_662bb83ab0587": "",
+            "lastActivityDate": "2024-05-20 19:36:50",
+            "personaID": "",
+            "data_de_abertura_6509e3fc799fa": "",
+            "cnpj_6511cc1ce6b48": "",
+            "lastName": "User",
+            "zipcode": "",
+            "crmOwnerID": "",
+            "isCustomer": "0",
+            "valor_previsto_do_pedido_660d5ed335e08": "",
+            "ownerID": "",
+            "crmAccountID": "",
+            "isQualified": "1",
+            "phoneNumberInternational": "345576772",
+            "active": "1",
+            "leadScore": "30",
+            "mobilePhoneNumberLink": "23546578769",
+            "rg__frente_e_verso___1__660e9b90e989b": "",
+            "id": "300000005861202",
+            "importID": "",
+            "crmLeadID": "",
+            "crmThirdPartyID": "",
+            "numero_662bb83aaa708": "",
+            "formGUID": "",
+            "dateDiff": "0",
+            "officePhoneNumberLink": "",
+            "observa____o_660d5d92e82c2": "",
+            "cnae_6511cc1f4e1b2": "",
+            "doc_com_limite_de_cr__dito_6634d22ac3837": "",
+            "leadSource": "",
+            "hasOpportunity": "1",
+            "leadStatus": "contactWithOpp",
+            "cep_6509e3fc861cf": "",
+            "nota_fiscal_para_refer__ncia_comercial_660d5cdd162de": "",
+            "distrito_65b250adb4744": "",
+            "o_que_melhor_te_define_65fb0aefdb87b": "",
+            "foto_do_local_de_entrega_660d5cb85f038": "",
+            "rg__frente_e_verso__660d5d00b0153": "",
+            "accountID": "200000001036421",
+            "companyName": "Dummy Co",
+            "mobilePhoneNumber": "23546578769",
+            "campaignID": "",
+            "email_do_vendedor_660d5d38ab608": "",
+            "valor_do_limite_liberado_6633e7775a09d": "",
+            "motivo_do_contato_657213d7826d1": "",
+            "comprovante_de_resid__ncia_660d5cee1ae0f": "",
+            "street": "",
+            "phoneNumberExtension": "",
+            "crmOpportunityID": "",
+            "faxNumberLink": "",
+            "displayName": "Dummy User",
+            "leadScoreWeighted": "30",
+            "phoneNumberLink": "345576772",
+            "c__digo_uno_6633e75600296": "",
+            "avatarUrl": "",
+            "firstName": "Dummy",
+            "crmContactID": "",
+            "industry": "",
+            "isUnsubscribed": "0",
+            "vendedor_6509e3fc7d400": "",
+            "bairro_6509e3fc808b9": "",
+            "leadID": "300000005861202",
+            "officePhoneNumber": "",
+            "description": "",
+            "updateUserProfileID": "0",
+            "hardBounced": "0",
+            "endere__o_65b24fc6d0166": "",
+            "estado_65b250d834ebb": "",
+            "companyProfileID": "311751680",
+            "city": "",
+            "country": "",
+            "website": "",
+            "createUserProfileID": "345882624",
+            "percentile": "19",
+            "numBounces": "0",
+            "capital_social_6511cc1f490e4": "",
+            "title": "",
+            "emailAddress": "dummy@dummy.com",
+            "trackingID": "",
+            "status": "3",
+            "phoneNumber": "345576772",
+            "createTimestamp": "2024-05-20 19:36:50",
+            "raz__o_social_ou_nome_fantasia_660d5be99096c": "",
+            "data_da_solicita____o_660d5d563a861": "",
+            "state": "",
+            "faxNumber": "",
+            "mobilePhoneNumberInternational": "23546578769",
+            "tipo_do_neg__cio_6508b2824cd06": "",
+            "marca_a_ser_vendida_660d5c937703e": "",
+            "isContact": "1",
+            "updateTimestamp": "2024-05-20 19:37:20",
+            "lastModified": "2024-05-20 19:37:20",
+            "cidade_65b250c8e4729": ""
+          },
+          "webhookUrl": "https://n8n.kamico.com.br/webhook-test/4b88c66a-231b-41cb-aab6-f3a1dceef900",
+          "executionMode": "test"
+        }
+      }
+    ],
+    "movidesk-ticket-webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.kamico.com.br",
+            "content-length": "555",
+            "content-type": "application/json; charset=utf-8",
+            "expect": "100-continue",
+            "x-forwarded-for": "52.0.96.168",
+            "x-forwarded-host": "n8n.kamico.com.br",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "73684829735e",
+            "x-real-ip": "52.0.96.168",
+            "accept-encoding": "gzip"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "Id": 3,
+            "Type": 1,
+            "Subject": "Ticket for Tester Customer",
+            "Status": "Resolvido",
+            "Origin": 9,
+            "IsDeleted": false,
+            "ActionCount": 3,
+            "ResolvedInFirstCall": false,
+            "SlaSolutionTime": 0,
+            "Actions": [
+              {
+                "Id": 3,
+                "Type": 1,
+                "Origin": 2,
+                "Description": "concluído teste\n",
+                "HtmlDescription": "<p>concluído teste</p>",
+                "CreatedBy": {
+                  "Id": "1096379994",
+                  "PersonType": 1,
+                  "ProfileType": 1
+                },
+                "IsDeleted": false,
+                "Attachments": []
+              }
+            ],
+            "CustomFieldValues": [
+              {
+                "CustomFieldId": 185029,
+                "CustomFieldRuleId": 94496,
+                "Line": 1,
+                "Value": "300000005861202",
+                "Items": []
+              }
+            ],
+            "WebhookEvents": [
+              {
+                "Criteria": 2,
+                "Operation": 10
+              }
+            ]
+          },
+          "webhookUrl": "https://n8n.kamico.com.br/webhook-test/5d5562be-0a3a-4640-9ab9-fe6a1b7a6ac4",
+          "executionMode": "test"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "env-vars": {
+      "main": [
+        [
+          {
+            "node": "build-post-ticket-body",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "build-getOpportunityLeads-body",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "sharpspring-get-deal-stages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sharpspring-get-deal-stages": {
+      "main": [
+        [
+          {
+            "node": "deal-stages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sharpspring-lead-webhook": {
+      "main": [
+        [
+          {
+            "node": "build-post-ticket-body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sharpspring-get-opportunity-leads": {
+      "main": [
+        [
+          {
+            "node": "build-getOpportunity-body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "build-getOpportunityLeads-body": {
+      "main": [
+        [
+          {
+            "node": "sharpspring-get-opportunity-leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "build-getOpportunity-body": {
+      "main": [
+        [
+          {
+            "node": "sharpspring-get-opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sharpspring-get-opportunity": {
+      "main": [
+        [
+          {
+            "node": "build-updateOpportunities-body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "deal-stages": {
+      "main": [
+        [
+          {
+            "node": "build-updateOpportunities-body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "build-updateOpportunities-body": {
+      "main": [
+        [
+          {
+            "node": "sharpspring-update-opportunities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "build-post-ticket-body": {
+      "main": [
+        [
+          {
+            "node": "movidesk-post-ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "movidesk-ticket-webhook": {
+      "main": [
+        [
+          {
+            "node": "build-getOpportunityLeads-body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aadc37af-dd8c-444f-afd6-5c41d0b4d39d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0f8c8a28e5adaf0fe3b681fe89092c9d509173c8da801b97f7e76ef5fe17a5f5"
+  },
+  "id": "8TvWrtDoCCyMI3iO",
+  "tags": []
+}
