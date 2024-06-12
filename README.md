@@ -25,8 +25,8 @@ O objetivo principal deste projeto é criar um hub de automação para a empresa
 
 Utilizando conceitos de Domain-Driven Design (DDD), o projeto é estruturado para refletir os domínios de negócios reais. O processo criativo também será documentado para incluir o processo que o tornou possível. Isso será detalhado em documentos específicos conforme listado abaixo:
 
-- **Requisitos Funcionais:** Este documento contém o resumo das reuniões realizadas com especialistas de negócio e usuários finais para extrair os requisitos funcionais que a solução precisa entregar, proporcionando uma visão clara das funcionalidades esperadas. [Saiba mais...](./requirements_análise.md)
-- **Geração A.I. Prompts:** Inclui os prompts utilizados no ChatGPT-4 para auxiliar no desenvolvimento do projeto, detalhando as interações e resultados obtidos. [Saiba mais...](./prompts-gpt.md)
+- **Requisitos Funcionais:** Este documento contém o resumo das reuniões realizadas com especialistas de negócio e usuários finais para extrair os requisitos funcionais que a solução precisa entregar, proporcionando uma visão clara das funcionalidades esperadas. [Saiba mais...](./requirements_analysis.md)
+- **Geração A.I. Prompts:** Inclui os prompts utilizados no ChatGPT-4 para auxiliar no desenvolvimento do projeto, detalhando as interações e resultados obtidos. [Saiba mais...](./scripting.md)
 - **Diário de Bordo:** Lançamentos resumidos por dia e horário descrevendo a evolução do projeto e os desafios enfrentados. [Saiba mais...](./logbook.md)
 
 ### Porque Usar o N8N?
