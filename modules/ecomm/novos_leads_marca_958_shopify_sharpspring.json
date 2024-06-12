@@ -1,0 +1,226 @@
+{
+  "name": "novos-leads-marca-958-shopify-sharpspring",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const apis_credentials = {\n  \"sharpspring\": {\n    \"url\": \"http://api.sharpspring.com/pubapi/v1\",\n    \"account_id\":\"1523E31BFE6BA2837192408DFFF6BB1A\",\n    \"secret_key\":\"784AEEF73D2AB7201589BE0207EB56A1\",\n  },\n}\nconst requestData = $('If').first().json\nenv_vars = {\n  \"apis_credentials\": apis_credentials\n}\nreturn [\n  {\n    json: {\n      env_vars: env_vars,\n      requestData: requestData\n    }\n  }\n]\n"
+      },
+      "id": "322ac372-20da-4a12-a7ca-338dde3080d3",
+      "name": "env-vars",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const requestID = $('generate-requestID-for-sharpspring').first().json.requestID;\n\nconst {\n  email,\n  default_address,\n  billing_address,\n  phone,\n  created_at,\n  total_price\n} = $('generate-requestID-for-sharpspring').first().json.checkoutData.body;\n\nconst address = default_address || billing_address || {};\n\n// Check if essential fields are filled\nconst hasEssentialFields =  address.first_name && address.address1 && address.city && address.zip && address.country && (phone || email);\n\nif (!hasEssentialFields) {\n    return [{ json: { message: 'Essential fields missing. No lead created.' } }];\n}\n\nconst leadData = {\n  isCustomer: true,\n  emailAddress: email || null,\n  firstName: address?.first_name || null,\n  lastName: address?.last_name || null,\n  phoneNumber: phone || null,\n  street: address?.address1 || null,\n  city: address?.city || null,\n  state: address?.province || null,\n  zipcode: address?.zip || null,\n  country: address?.country || null,\n  companyName: address?.company || null,  \n  status: 3,\n  createTimestamp: new Date(created_at).toISOString(),\n  description: `Shopify Checkout created on ${created_at} with total price ${total_price}`    \n};\n\nreturn [{ \n  json: {\n    method: \"createLeads\",\n    params: { objects: [leadData] },\n    id: requestID\n  } \n}];\n"
+      },
+      "id": "40487569-3f53-4c4d-a875-7663e1bb2b1a",
+      "name": "build-createLeads-body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('env-vars').first().json.env_vars.apis_credentials.sharpspring.url }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "accountID",
+              "value": "={{ $('env-vars').first().json.env_vars.apis_credentials.sharpspring.account_id }}"
+            },
+            {
+              "name": "=secretKey",
+              "value": "={{ $('env-vars').first().json.env_vars.apis_credentials.sharpspring.secret_key }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Expect"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $('env-vars').first().json.requestData.toJsonString() }}",
+        "options": {}
+      },
+      "id": "6ca0fc6b-e5a4-4728-b779-c162120f19eb",
+      "name": "sharpspring-create-leads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function generateRandomID() {\n    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';\n    const generateGroup = () => {\n        let group = '';\n        for (let i = 0; i < 6; i++) {\n            group += characters.charAt(Math.floor(Math.random() * characters.length));\n        }\n        return group;\n    };\n    return `${generateGroup()}-${generateGroup()}-${generateGroup()}-${generateGroup()}`;\n}\nconst checkoutData = $('shopify-webhook-checkout-update').first().json\nreturn { json: {\n  requestID: generateRandomID(),\n  checkoutData: checkoutData\n} };\n"
+      },
+      "id": "ecf44e4f-60da-4d0d-aac5-3cf8cd674584",
+      "name": "generate-requestID-for-sharpspring",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "0af0cd38-b666-452b-a67a-114a696d2b13",
+              "leftValue": "={{ $json.method }}",
+              "rightValue": "createLeads",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "92960aa0-fe7f-480a-aa69-ede6bab0abb3",
+              "leftValue": "={{ $json.method }}",
+              "rightValue": "createLeads",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "961324ec-e584-4a50-9d89-12c291e120de",
+              "leftValue": "={{ $json.params.objects }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "85a30b18-69d8-41ee-af93-8c58598cc5dd",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        900,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "b40202a8-fdd9-463f-b0e6-8bcb676df660",
+        "options": {}
+      },
+      "id": "8573bfb5-2374-4c39-85a4-8fc6d798954b",
+      "name": "shopify-webhook-checkout-update",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        780
+      ],
+      "webhookId": "b40202a8-fdd9-463f-b0e6-8bcb676df660"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "env-vars": {
+      "main": [
+        [
+          {
+            "node": "sharpspring-create-leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate-requestID-for-sharpspring": {
+      "main": [
+        [
+          {
+            "node": "build-createLeads-body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "build-createLeads-body": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "env-vars",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "shopify-webhook-checkout-update": {
+      "main": [
+        [
+          {
+            "node": "generate-requestID-for-sharpspring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9b7f2b44-2d34-4982-8e4f-51916d632341",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ce482780e7986cce0fcd2d18638d192bd35e6a4eee3383e40044dc09e4c596b"
+  },
+  "id": "ckwJdUYEz43x2EJ7",
+  "tags": []
+}

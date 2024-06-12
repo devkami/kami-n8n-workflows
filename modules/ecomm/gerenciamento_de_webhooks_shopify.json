@@ -1,0 +1,199 @@
+{
+  "name": "gerenciamento-webhooks-shopify",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const env_vars = {\n  \"shop_url\": \"https://loja958.myshopify.com\",  \n  \"test_url\": \"https://test-958.myshopify.com\",  \n};\nreturn [{ json: env_vars }];"
+      },
+      "id": "9959d7fe-5265-4d42-ba75-b6f01f6dd848",
+      "name": "env-vars",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        340,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "shopifyAccessTokenApi",
+        "url": "={{ $json.shop_url }}/admin/api/2024-04/webhooks.json",
+        "options": {}
+      },
+      "id": "c695e8f0-8713-4224-8765-d1707436c291",
+      "name": "Get Webhooks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        700,
+        560
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "XHUyWgzbbNC50GxA",
+          "name": "Header Auth account"
+        },
+        "shopifyAccessTokenApi": {
+          "id": "VBBIlVRTJhmqBBHY",
+          "name": "Shopify Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "shopifyAccessTokenApi",
+        "requestMethod": "POST",
+        "url": "={{ $json.shop_url }}/admin/api/2024-04/webhooks.json",
+        "options": {},
+        "bodyParametersUi": {
+          "parameter": [
+            {}
+          ]
+        }
+      },
+      "id": "19abf808-2b44-4e63-950b-5e75926d8ceb",
+      "name": "Post Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1220,
+        780
+      ],
+      "credentials": {
+        "shopifyAccessTokenApi": {
+          "id": "VBBIlVRTJhmqBBHY",
+          "name": "Shopify Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "shopifyAccessTokenApi",
+        "requestMethod": "DELETE",
+        "url": "={{ $('env-vars').first().json.shop_url }}/admin/api/2024-04/webhooks/{{ $('webhook-id') }}.json",
+        "options": {}
+      },
+      "id": "349120ac-f0f3-44fc-ab49-31f1f36f35f3",
+      "name": "Delete Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [
+        1220,
+        1020
+      ],
+      "credentials": {
+        "shopifyAccessTokenApi": {
+          "id": "VBBIlVRTJhmqBBHY",
+          "name": "Shopify Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const webhookData = {\n  \"address\": \"https://loja958.myshopify.com\",\n  \"topic\": \"checkout/update\",\n  \"format\": \"json\"\n};\nreturn { json: webhookData };"
+      },
+      "id": "f27891c8-8e3f-42a9-b8e7-b400f8274cb0",
+      "name": "webhook-data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const webhookID = \"my webhook id to delete\"\nreturn { json: {webhookID: webhookID} };"
+      },
+      "id": "bf629746-c65c-4de4-9bcc-e75deb5bf2df",
+      "name": "webhook-id",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        980,
+        1160
+      ]
+    }
+  ],
+  "pinData": {
+    "env-vars": [
+      {
+        "json": {
+          "shop_url": "https://loja958.myshopify.com",
+          "test_url": "https://test-958.myshopify.com"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "env-vars": {
+      "main": [
+        [
+          {
+            "node": "Get Webhooks",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post Webhook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Delete Webhook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "webhook-data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "webhook-id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "webhook-data": {
+      "main": [
+        [
+          {
+            "node": "Post Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "webhook-id": {
+      "main": [
+        [
+          {
+            "node": "Delete Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "15cffd71-4ebe-492c-9e27-b3be14530908",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ce482780e7986cce0fcd2d18638d192bd35e6a4eee3383e40044dc09e4c596b"
+  },
+  "id": "o5S6KHT7bKWIDZ3N",
+  "tags": []
+}
