@@ -17,9 +17,4 @@ The CRM module integrates SharpSpring and Movidesk to automate client analysis p
 - [SharpSpring API Documentation](https://api.sharpspring.com/)
 - [Movidesk API Documentation](https://api.movidesk.com/public/v1)
 
-### Bibliographical References
-
-- SharpSpring. (2024). *SharpSpring API Documentation*. Retrieved from [SharpSpring API](https://api.sharpspring.com/)
-- Movidesk. (2024). *Movidesk API Documentation*. Retrieved from [Movidesk API](https://api.movidesk.com/public/v1)
-
 ---
