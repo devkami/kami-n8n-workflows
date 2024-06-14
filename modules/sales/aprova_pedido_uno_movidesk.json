@@ -1,0 +1,448 @@
+{
+  "name": "aprova-pedido-uno-movidesk",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "9f460c19-404e-490d-bd19-57ea295934bb",
+      "name": "Schedule Trigger1",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        120,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  pedido.cod_pedido AS cod_pedido,\n  pedido.tb_preco AS tb_preco,\n  pedido.cod_cond_pagto AS cod_cond_pagto,\n  pedido.vl_total_pedido AS vl_total_pedido,\n  pedido.cod_cliente AS cod_cliente,\n  pedido.nome_cliente AS nome_cliente,\n  pedido.email_cliente AS email_cliente,\n  pedido.ddd AS ddd,\n  pedido.cod_colaborador AS cod_colaborador,\n  pedido.cod_pedido AS cod_pedido,\n  pedido.telefone AS telefone\nFROM vd_pedido AS pedido\nWHERE pedido.dt_implant > \"2024-06-13 16:56:07\"\nAND pedido.situacao = 5\nAND pedido.nop IN (\"TROCA\", \"VENDA\", \"5.102\");",
+        "options": {}
+      },
+      "id": "287dd5d1-3574-4d95-8e82-5e7dd56986db",
+      "name": "uno-select-last-sale-orders",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        700,
+        900
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "bmDPOaYWP2CbGzJc",
+          "name": "UNO MySQL account - maicon.menezes"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.movidesk.com/public/v1/tickets",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.toJsonString() }}",
+        "options": {}
+      },
+      "id": "4a509ab8-abbd-431c-86ac-1d0d02aeecc0",
+      "name": "movidesk-post-ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1580,
+        680
+      ],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "GbqiOojQK9m6a4fe",
+          "name": "MOVIDESK API Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "sg_colaborador",
+          "mode": "name"
+        },
+        "returnAll": true,
+        "options": {
+          "outputColumns": [
+            "cod_colaborador",
+            "id_usuario",
+            "email",
+            "nome_colaborador",
+            "ddd_celular",
+            "celular",
+            "ddd_1",
+            "telefone_1"
+          ]
+        }
+      },
+      "id": "966c4fc2-3b53-4631-b559-be54c6f6a038",
+      "name": "uno-get-salesperson-data",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        700,
+        680
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "bmDPOaYWP2CbGzJc",
+          "name": "UNO MySQL account - maicon.menezes"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const date = $('Schedule Trigger1').first().json.timestamp\nconst timestamp = date.slice(0, 19).replace('T', ' ');\nreturn [{ \"lastRunTime\": timestamp }];"
+      },
+      "id": "1b5aa9bb-e0e5-450f-b8bc-f9856b64f1e0",
+      "name": "format-date",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "table": {
+          "__rl": true,
+          "value": "cd_cond_pagto",
+          "mode": "name"
+        },
+        "returnAll": true,
+        "options": {
+          "outputColumns": [
+            "cod_cond_pagto",
+            "desc_abrev"
+          ]
+        }
+      },
+      "id": "0c8b9735-4638-4f61-929f-904f92d8fbeb",
+      "name": "uno-get-payment-condition",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        700,
+        460
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "bmDPOaYWP2CbGzJc",
+          "name": "UNO MySQL account - maicon.menezes"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const orders = $('uno-select-last-sale-orders').all()\nconst paymentConditions = $('uno-get-payment-condition').all()\nconst salespersons = $('uno-get-salesperson-data').all()\n\nconst createTicketData = (sale_order) => {\n  const order = sale_order.json;\n  const salesperson = salespersons.find(sp => sp.json.cod_colaborador === order.cod_colaborador).json;\n  const paymentCondition = paymentConditions.find(pc => pc.json.cod_cond_pagto === order.cod_cond_pagto).json.desc_abrev;\n\n  const order_description =  `\n    <h3>Dados do Pedido</h3>\n    <p><strong>Código do Pedido:</strong> ${order.cod_pedido || ''}</p>\n    <p><strong>Tabela de Preço:</strong> ${order.tb_preco || ''}</p>\n    <p><strong>Condição de Pagamento:</strong> ${paymentCondition || ''}</p>\n    <p><strong>Valor Total do Pedido:</strong> ${order.vl_total_pedido || ''}</p>\n  `;\n    \n  const customer_description =  `\n    <hr>\n    <h3>Dados do Cliente</h3>\n    <p><strong>Código do Cliente:</strong> ${order.cod_cliente || ''}</p>\n    <p><strong>Nome do Cliente:</strong> ${order.nome_cliente || ''}</p>\n    <p><strong>Email do Cliente:</strong> ${order.email_cliente || ''}</p>\n    <p><strong>Telefone:</strong> (${order.ddd || ''}) ${order.telefone || ''}</p>\n    <hr>\n  `;\n    \n  const salesperson_description = `\n    <h3>Dados do Vendedor</h3>\n    <p><strong>Código do Vendedor:</strong> ${order.cod_colaborador}</p>\n    <p><strong>Nome do Vendedor:</strong> ${salesperson.nome_colaborador}</p>\n    <p><strong>Email do Vendedor:</strong> ${salesperson.email}</p>\n    <p><strong>Celular:</strong> ${salesperson.ddd_celular ? `(${salesperson.ddd_celular}) ${salesperson.celular}` : ''}</p>\n    <p><strong>Telefone:</strong> ${salesperson.ddd_1 ? `(${salesperson.ddd_1}) ${salesperson.telefone_1}` : ''}</p>\n    <hr>\n  `;\n\n  const description = order_description + customer_description + salesperson_description;\n\n  const ticket = {\n      type: 1,\n      subject: `Análise do Pedido: ${order.cod_pedido}`,\n      origin: 9,\n      clients: [\n        {\n          id: \"1274270668\",\n          personType: 1,\n          profileType: 1,\n          Customers: \"\",\n        }\n      ],\n      actions: [\n        {\n          type: 1,\n          origin: \"9\",\n          description: description,\n          Notes: \"\",\n        }\n      ],\n      createdBy: { id: \"1018440105\" }\n  };\n\nreturn ticket;  \n}\n\nconst tickets = orders.map(order => createTicketData(order));\n\nreturn tickets;"
+      },
+      "id": "9b1db476-7abf-496d-885e-093fc2792a7f",
+      "name": "build-tickets-description",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1220,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "c757863f-1ac3-44b1-b5a4-bb5f1497e2f9",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        160,
+        560
+      ]
+    }
+  ],
+  "pinData": {
+    "uno-select-last-sale-orders": [
+      {
+        "json": {
+          "cod_pedido": 101688,
+          "tb_preco": "TabBRAESUPRI",
+          "cod_cond_pagto": "306090120",
+          "vl_total_pedido": 2370.35,
+          "cod_cliente": 35774,
+          "nome_cliente": "Charme Estudio de Beleza",
+          "email_cliente": null,
+          "ddd": "19",
+          "cod_colaborador": 3405,
+          "telefone": "988386216"
+        }
+      },
+      {
+        "json": {
+          "cod_pedido": 101691,
+          "tb_preco": "TabKPRO23",
+          "cod_cond_pagto": "3060",
+          "vl_total_pedido": 495.84,
+          "cod_cliente": 39595,
+          "nome_cliente": "CIA DA BELEZA",
+          "email_cliente": null,
+          "ddd": "11",
+          "cod_colaborador": 67142,
+          "telefone": "974775048"
+        }
+      },
+      {
+        "json": {
+          "cod_pedido": 101694,
+          "tb_preco": "TabSALAO24",
+          "cod_cond_pagto": "45",
+          "vl_total_pedido": 400,
+          "cod_cliente": 32900,
+          "nome_cliente": "Gabriela Gomes da Silva",
+          "email_cliente": null,
+          "ddd": "11",
+          "cod_colaborador": 54,
+          "telefone": "992346676"
+        }
+      },
+      {
+        "json": {
+          "cod_pedido": 101695,
+          "tb_preco": "TabBRAE24",
+          "cod_cond_pagto": "306090120",
+          "vl_total_pedido": 839.84,
+          "cod_cliente": 39282,
+          "nome_cliente": "Matheus Vieira Branco",
+          "email_cliente": null,
+          "ddd": "15",
+          "cod_colaborador": 3472,
+          "telefone": "97887269"
+        }
+      },
+      {
+        "json": {
+          "cod_pedido": 101697,
+          "tb_preco": "mercos",
+          "cod_cond_pagto": "0720406080",
+          "vl_total_pedido": 10,
+          "cod_cliente": 39713,
+          "nome_cliente": "Mercos1",
+          "email_cliente": null,
+          "ddd": null,
+          "cod_colaborador": 54,
+          "telefone": null
+        }
+      },
+      {
+        "json": {
+          "cod_pedido": 101698,
+          "tb_preco": "TabSALAO24",
+          "cod_cond_pagto": "1020304050",
+          "vl_total_pedido": 1034.01,
+          "cod_cliente": 39713,
+          "nome_cliente": "Mercos1",
+          "email_cliente": null,
+          "ddd": null,
+          "cod_colaborador": 54,
+          "telefone": null
+        }
+      },
+      {
+        "json": {
+          "cod_pedido": 101700,
+          "tb_preco": "TabVAREJO24",
+          "cod_cond_pagto": "306090",
+          "vl_total_pedido": 25974,
+          "cod_cliente": 29641,
+          "nome_cliente": "FABIOLA RIBEIRO PAES DE CARVALHO PEREIR",
+          "email_cliente": null,
+          "ddd": "12",
+          "cod_colaborador": 58,
+          "telefone": "982275678"
+        }
+      },
+      {
+        "json": {
+          "cod_pedido": 101703,
+          "tb_preco": "TabSALAO24",
+          "cod_cond_pagto": "306090120",
+          "vl_total_pedido": 4917.28,
+          "cod_cliente": 34675,
+          "nome_cliente": "Andiara Regina de Oliveira",
+          "email_cliente": null,
+          "ddd": "11",
+          "cod_colaborador": 54,
+          "telefone": "971694655"
+        }
+      },
+      {
+        "json": {
+          "cod_pedido": 101706,
+          "tb_preco": "TabKPRO23",
+          "cod_cond_pagto": "3060",
+          "vl_total_pedido": 687.33,
+          "cod_cliente": 38731,
+          "nome_cliente": "MOON CONCEPT BY JUNIOR QUEIROZ",
+          "email_cliente": null,
+          "ddd": "64",
+          "cod_colaborador": 3503,
+          "telefone": "999025042"
+        }
+      },
+      {
+        "json": {
+          "cod_pedido": 101708,
+          "tb_preco": "TabDEVA23",
+          "cod_cond_pagto": "306090120",
+          "vl_total_pedido": 2626.02,
+          "cod_cliente": 37778,
+          "nome_cliente": "BRUNA MELO RAMOS 42959671813",
+          "email_cliente": null,
+          "ddd": "15",
+          "cod_colaborador": 3472,
+          "telefone": "96535206"
+        }
+      },
+      {
+        "json": {
+          "cod_pedido": 101710,
+          "tb_preco": "TabBRAE24",
+          "cod_cond_pagto": "306090120",
+          "vl_total_pedido": 573.12,
+          "cod_cliente": 38178,
+          "nome_cliente": "CRISLAYNE RIBEIRO SILVA 03608472509",
+          "email_cliente": null,
+          "ddd": "16",
+          "cod_colaborador": 3506,
+          "telefone": "982078194"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "format-date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "uno-select-last-sale-orders": {
+      "main": [
+        [
+          {
+            "node": "build-tickets-description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "uno-get-salesperson-data": {
+      "main": [
+        [
+          {
+            "node": "build-tickets-description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "format-date": {
+      "main": [
+        [
+          {
+            "node": "uno-select-last-sale-orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "uno-get-payment-condition": {
+      "main": [
+        [
+          {
+            "node": "build-tickets-description",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "uno-get-payment-condition",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "uno-get-salesperson-data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "build-tickets-description": {
+      "main": [
+        [
+          {
+            "node": "movidesk-post-ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "854fb465-0b47-405b-bb6f-e8e4453983e3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ce482780e7986cce0fcd2d18638d192bd35e6a4eee3383e40044dc09e4c596b"
+  },
+  "id": "yeqKd5qYhvJk8mYf",
+  "tags": []
+}
